@@ -1,0 +1,3 @@
+# analytics
+
+Analytics page placeholder.

@@ -1,0 +1,3 @@
+# settings
+
+Settings page placeholder.
