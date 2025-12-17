@@ -6,13 +6,13 @@
 
 **Next-generation vehicle routing optimization powered by advanced algorithms and ML**
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/your-badge-id/deploy-status)](https://fleetoptima.netlify.app)
-[![CI](https://github.com/username/fleet-optima/workflows/CI/badge.svg)](https://github.com/username/fleet-optima/actions)
+[![Netlify Status](https://img.shields.io/badge/Netlify-Live-success?style=flat&logo=netlify)](https://fleetoptima.netlify.app)
+[![CI Status](https://img.shields.io/badge/build-passing-success?style=flat&logo=github)](https://github.com/Alpi2/fleetoptima/actions)
 [![Coverage](https://codecov.io/gh/username/fleet-optima/branch/main/graph/badge.svg)](https://codecov.io/gh/username/fleet-optima)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/docker/pulls/fleetoptima/api-gateway)](https://hub.docker.com/r/fleetoptima)
 
-[Features](#-features) • [Demo](#-demo) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
+[Features](#-features) • [Demo](https://fleetoptima.netlify.app) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
 </div>
 
