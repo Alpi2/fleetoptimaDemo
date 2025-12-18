@@ -404,7 +404,7 @@ This project is licensed under the Apache License 2.0 - see [LICENSE](LICENSE) f
 - **Documentation**: https://docs.fleetoptima.com
 - **Issues**: [GitHub Issues](https://github.com/username/fleet-optima/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/username/fleet-optima/discussions)
-- **Email**: support@fleetoptima.com
+- **Email**: alperocal2@googlemail.com
 - **Slack**: [Join our community](https://fleetoptima.slack.com)
 
 ---

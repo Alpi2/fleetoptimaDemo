@@ -4,6 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MapContainer } from "@/components/map/MapContainer";
+import {
+  calculateTotalDistance,
+  estimateDuration,
+  formatDistance,
+  formatDuration,
+} from "@/lib/route-utils";
 import {
   Search,
   MapPin,
@@ -14,62 +21,124 @@ import {
   Thermometer,
   Signal,
   RefreshCw,
+  Route,
+  Timer,
 } from "lucide-react";
 
 const vehicles = [
   {
     id: "VH-001",
-    plate: "B AR 123",
-    driver: "Jonh Hall",
-    status: "moving",
+    plate: "LDN 123A",
+    driver: "James Wilson",
+    status: "moving" as const,
     speed: 65,
-    location: "A12 Autobahn, Berlin - Frankfurt",
+    location: "London, Westminster - A3211",
+    lat: 51.5014,
+    lng: -0.1246,
     fuel: 78,
     temperature: 4,
-    lastUpdate: "2 min vor",
+    lastUpdate: "2 min ago",
     route: "R-2024-001",
     eta: "14:30",
   },
   {
     id: "VH-002",
-    plate: "H Y 123",
-    driver: "Maria Schmidt",
-    status: "stopped",
+    plate: "MAN 456B",
+    driver: "Emma Thompson",
+    status: "stopped" as const,
     speed: 0,
-    location: "München, A9 - Raststätte",
+    location: "London, City of London - Delivery Point",
+    lat: 51.5155,
+    lng: -0.0922,
     fuel: 45,
     temperature: 3,
-    lastUpdate: "1 min vor",
+    lastUpdate: "1 min ago",
     route: "R-2024-002",
     eta: "15:15",
   },
   {
     id: "VH-003",
-    plate: "BB C 1234",
-    driver: "Anton Weber",
-    status: "idle",
+    plate: "BIR 789C",
+    driver: "Oliver Brown",
+    status: "idle" as const,
     speed: 0,
-    location: "Bochum, A40 ",
+    location: "London, Shoreditch - Depot",
+    lat: 51.5246,
+    lng: -0.0782,
     fuel: 92,
     temperature: 5,
-    lastUpdate: "5 min vor",
+    lastUpdate: "5 min ago",
     route: "-",
     eta: "-",
   },
   {
     id: "VH-004",
-    plate: "BB D 5678",
-    driver: "Helga Fischer",
-    status: "moving",
+    plate: "LIV 012D",
+    driver: "Sophia Davis",
+    status: "moving" as const,
     speed: 48,
-    location: "Hamburg, B75 - Innenstadt",
+    location: "London, Croydon - A23",
+    lat: 51.3714,
+    lng: -0.0977,
     fuel: 34,
     temperature: 4,
-    lastUpdate: "1 min vor",
+    lastUpdate: "1 min ago",
     route: "R-2024-003",
     eta: "16:45",
   },
 ];
+
+const mapVehicles = vehicles.map((v) => ({
+  id: v.id,
+  lat: v.lat,
+  lng: v.lng,
+  status:
+    v.status === "moving"
+      ? ("active" as const)
+      : v.status === "stopped"
+      ? ("idle" as const)
+      : ("offline" as const),
+  plate: v.plate,
+}));
+
+const demoRoutes = [
+  {
+    id: "R-2024-001",
+    name: "Westminster - City of London Route",
+    color: "#3b82f6",
+    points: [
+      { lat: 51.5014, lng: -0.1246 },
+      { lat: 51.505, lng: -0.115 },
+      { lat: 51.51, lng: -0.105 },
+      { lat: 51.512, lng: -0.098 },
+      { lat: 51.5155, lng: -0.0922 },
+    ],
+  },
+  {
+    id: "R-2024-003",
+    name: "Croydon - Shoreditch Route",
+    color: "#8b5cf6",
+    points: [
+      { lat: 51.3714, lng: -0.0977 },
+      { lat: 51.4, lng: -0.09 },
+      { lat: 51.45, lng: -0.08 },
+      { lat: 51.5, lng: -0.085 },
+      { lat: 51.5246, lng: -0.0782 },
+    ],
+  },
+];
+
+const routesWithInfo = demoRoutes.map((route) => {
+  const distance = calculateTotalDistance(route.points);
+  const duration = estimateDuration(distance);
+  return {
+    ...route,
+    distance,
+    duration,
+    formattedDistance: formatDistance(distance),
+    formattedDuration: formatDuration(duration),
+  };
+});
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -87,7 +156,7 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case "moving":
-      return "In motion";
+      return "Moving";
     case "stopped":
       return "Stopped";
     case "idle":
@@ -101,10 +170,9 @@ export default function TrackingPage() {
   return (
     <DashboardLayout
       title="Live Tracking"
-      subtitle="Vehicles and drivers' real-time locations"
+      subtitle="Real-time locations of vehicles and drivers"
     >
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
         <div className="flex justify-end">
           <Button variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
@@ -113,7 +181,6 @@ export default function TrackingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Area */}
           <div className="lg:col-span-2">
             <Card className="h-[600px]">
               <CardHeader className="pb-2">
@@ -129,71 +196,62 @@ export default function TrackingPage() {
                 </div>
               </CardHeader>
               <CardContent className="h-[520px]">
-                <div className="relative h-full rounded-lg overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 border border-border">
-                  {/* Map Placeholder */}
-                  <div className="absolute inset-0 opacity-30">
-                    <div className="h-full w-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48cGF0aCBkPSJNMCAwaDQwdjQwSDB6IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMC41Ii8+PC9nPjwvc3ZnPg==')]" />
-                  </div>
+                <MapContainer
+                  className="h-full w-full"
+                  center={[-0.1276, 51.5074]}
+                  zoom={10}
+                  vehicles={mapVehicles}
+                  showVehicles={true}
+                  routes={demoRoutes}
+                  showRoutes={true}
+                />
+              </CardContent>
+            </Card>
 
-                  {/* Vehicle Markers */}
-                  {vehicles.map((vehicle, index) => (
+            <Card className="mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Route className="h-5 w-5 text-primary" />
+                  Active Routes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {routesWithInfo.map((route) => (
                     <div
-                      key={vehicle.id}
-                      className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-                      style={{
-                        left: `${20 + index * 20}%`,
-                        top: `${30 + index * 15}%`,
-                      }}
+                      key={route.id}
+                      className="p-3 rounded-lg border border-border bg-card/50"
                     >
-                      <div
-                        className={`p-2 rounded-full ${
-                          vehicle.status === "moving"
-                            ? "bg-accent"
-                            : vehicle.status === "stopped"
-                            ? "bg-warning"
-                            : "bg-muted-foreground"
-                        } shadow-lg transition-transform group-hover:scale-125`}
-                      >
-                        <Truck className="h-4 w-4 text-white" />
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: route.color }}
+                        />
+                        <span className="font-medium text-sm">
+                          {route.name}
+                        </span>
                       </div>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                        {vehicle.plate}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Navigation className="h-3.5 w-3.5" />
+                          <span>{route.formattedDistance}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Timer className="h-3.5 w-3.5" />
+                          <span>{route.formattedDuration}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span>{route.points.length} points</span>
+                        </div>
                       </div>
                     </div>
                   ))}
-
-                  {/* Map Controls */}
-                  <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                    <Button size="icon" variant="secondary" className="h-8 w-8">
-                      <span className="text-lg font-bold">+</span>
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-8 w-8">
-                      <span className="text-lg font-bold">−</span>
-                    </Button>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm border border-border rounded-lg p-3 space-y-2">
-                    <p className="text-xs font-medium text-foreground">Durum</p>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-3 h-3 rounded-full bg-accent" />
-                      <span className="text-muted-foreground">In motion</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-3 h-3 rounded-full bg-warning" />
-                      <span className="text-muted-foreground">Stopped</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-3 h-3 rounded-full bg-muted-foreground" />
-                      <span className="text-muted-foreground">Idle</span>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Vehicle List */}
           <div>
             <Card className="h-[600px]">
               <CardHeader className="pb-2">
@@ -227,7 +285,6 @@ export default function TrackingPage() {
                             {getStatusText(vehicle.status)}
                           </Badge>
                         </div>
-
                         <div className="space-y-1.5 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-3.5 w-3.5" />
@@ -236,11 +293,11 @@ export default function TrackingPage() {
                           <div className="grid grid-cols-2 gap-2">
                             <div className="flex items-center gap-1.5">
                               <Navigation className="h-3.5 w-3.5 text-primary" />
-                              <span>{vehicle.speed} km/s</span>
+                              <span>{vehicle.speed} km/h</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Fuel className="h-3.5 w-3.5 text-warning" />
-                              <span>%{vehicle.fuel}</span>
+                              <span>{vehicle.fuel}%</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Thermometer className="h-3.5 w-3.5 text-accent" />
@@ -252,7 +309,6 @@ export default function TrackingPage() {
                             </div>
                           </div>
                         </div>
-
                         {vehicle.route !== "-" && (
                           <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">
